@@ -1,0 +1,6 @@
+{
+  "name": "Basic local agent",
+  "description": "Minimal ReAct agent for local testing",
+  "version": "1.0",
+  "scenario": "basic"
+}
