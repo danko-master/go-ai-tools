@@ -1,3 +1,4 @@
+// Interfaces for LLM tools
 package tool
 
 import (
