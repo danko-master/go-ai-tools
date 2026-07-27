@@ -80,3 +80,34 @@ func (s *Scheduler) Execute(ctx context.Context, plan *Plan) *PlanSummary {
 	summary.Duration = time.Since(time.Now())
 	return summary
 }
+
+// ExecuteWithFallback runs with fallback on failure
+func (s *Scheduler) ExecuteWithFallback(ctx context.Context, plan *Plan, fallbackStep func(context.Context, Step) (*StepResult, error)) *PlanSummary {
+	summary := &PlanSummary{TotalSteps: len(plan.Steps)}
+
+	for i, step := range plan.Steps {
+		start := time.Now()
+		result, err := s.registry.Call(ctx, step.ToolName, []byte(step.Arguments))
+		end := time.Now()
+
+		sr := StepResult{Step: step, Start: start, End: end}
+		if err != nil {
+			if fallbackStep != nil {
+				fb, fbErr := fallbackStep(ctx, step)
+				if fbErr == nil {
+					sr = *fb
+				}
+			}
+			sr.Error = err
+			summary.Failures++
+		} else {
+			sr.Result = result
+			summary.Successes++
+		}
+		summary.Results = append(summary.Results, sr)
+		_ = i
+	}
+
+	summary.Duration = time.Since(time.Now())
+	return summary
+}
