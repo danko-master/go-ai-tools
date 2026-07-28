@@ -19,6 +19,59 @@ type Config struct {
 	Description string `json:"description"`
 	Version     string `json:"version"`
 	Scenario    string `json:"scenario"`
+
+	LLM   LLMConfig    `json:"llm"`
+	Agent AgentConfig  `json:"agent"`
+	Tools []ToolConfig `json:"tools"`
+
+	RateLimiting RateLimitingConfig `json:"rate_limiting,omitempty"`
+	Logging      LoggingConfig      `json:"logging,omitempty"`
+	Scheduler    SchedulerConfig    `json:"scheduler,omitempty"`
+}
+
+type LLMConfig struct {
+	Provider    string  `json:"provider"`
+	Endpoint    string  `json:"endpoint"`
+	Model       string  `json:"model"`
+	Temperature float64 `json:"temperature,omitempty"`
+	MaxTokens   int     `json:"max_tokens,omitempty"`
+	APIKeyPath  string  `json:"api_key_path,omitempty"`
+}
+
+type AgentConfig struct {
+	Mode          string `json:"mode"`
+	MaxIterations string `json:"max_iterations"`
+	SystemPrompt  string `json:"system_prompt"`
+}
+type ToolConfig struct {
+	Name           string   `json:"name"`
+	Description    string   `json:"description"`
+	RequiredArgs   []string `json:"required_args,omitempty"`
+	TimeoutSeconds int      `json:"timeout_seconds,omitempty"`
+	RetryCount     int      `json:"retry_count,omitempty"`
+	RetryBackoffMS int      `json:"retry_backoff_ms,omitempty"`
+}
+type RateLimitingConfig struct {
+	TockenBucket  TockenBucketConfig  `json:"token_bucket"`
+	SlidingWindow SlidingWindowConfig `json:"sliding_window"`
+}
+type TockenBucketConfig struct {
+	Capacity         int     `json:"capacity"`
+	RefillRatePerSec float64 `json:"refill_rate_per_sec"`
+}
+type SlidingWindowConfig struct {
+	ToolLimit   int `json:"tool_limit"`
+	WindowHours int `json:"window_hours"`
+}
+type LoggingConfig struct {
+	Level          string `json:"level"`
+	Output         string `json:"output"`
+	FilePath       string `json:"file_path"`
+	MaxFileSizeMB  int    `json:"max_file_size_mb"`
+	MaxBackupFiles int    `json:"max_backup_files"`
+}
+type SchedulerConfig struct {
+	Mode string `json:"mode"`
 }
 
 // Load reads and parse a JSON config file

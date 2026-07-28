@@ -2,5 +2,64 @@
   "name": "Basic local agent",
   "description": "Minimal ReAct agent for local testing",
   "version": "1.0",
-  "scenario": "basic"
+  "scenario": "basic",
+  "llm": {
+    "provider": "ollama",
+    "endpoint": "http://localhost:11434",
+    "model": "llama4",
+    "temperature": 0.7,
+    "max_tokens": 2048,
+    "api_key_path": ""
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get current weather for a location",
+      "required_args": ["location"],
+      "timeout_seconds": 5,
+      "retry_count": 2,
+      "retry_backoff_ms": 500
+    },
+    {
+      "name": "file_search",
+      "description": "Search files in a directory",
+      "required_args": ["path", "pattern"],
+      "timeout_seconds": 5,
+      "retry_count": 2,
+      "retry_backoff_ms": 500
+    },
+    {
+      "name": "calculator",
+      "description": "Perform basic arithmetic",
+      "required_args": ["expression"],
+      "timeout_seconds": 5,
+      "retry_count": 2,
+      "retry_backoff_ms": 500
+    }
+  ],
+  "agent": {
+    "mode": "react",
+    "max_iterations": "10",
+    "system_prompt": "You are a helpful assistant with access to tools. Respond concisely."
+  },
+  "rate_limiting": {
+    "token_bucket": {
+      "capacity": 100,
+      "refill_rate_per_sec": 10
+    },
+    "sliding_window": {
+      "tool_limit": 3,
+      "window_hours": 1
+    }
+  },
+  "scheduler": {
+    "mode": "sequental"
+  },
+  "logging": {
+    "level": "info",
+    "output": "both",
+    "file_path": "/var/log/goaitools/agent.log",
+    "max_file_size_mb": 100,
+    "max_backup_files": 3
+  }
 }
