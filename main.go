@@ -6,7 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"go-ai-tools/config"
+	"go-ai-tools/llm"
 	"go-ai-tools/mcp"
+	"go-ai-tools/ratelimit"
 	"go-ai-tools/registry"
 	"go-ai-tools/tool"
 	"os"
@@ -103,16 +105,53 @@ func runWithConfig(path string) {
 }
 
 func runBasic(cfg *config.Config) {
-	// Your config
+	fmt.Println("Starting basic agent")
+
+	// Build tools from config
+	reg := buildTools(cfg.Tools)
+
+	reg.Use(registry.LoggingMiddleware(func(name string, dur time.Duration, err error) {
+		status := "ok"
+		if err != nil {
+			status = "err"
+		}
+		fmt.Printf(" [tool] %s (%v) %s\n", name, dur, status)
+	}))
+
+	if cfg.LLM.Endpoint != "" {
+		client := llm.New(cfg.LLM.Endpoint, "", cfg.LLM.Model)
+		_ = client
+
+		tb := ratelimit.NewTockenBucket(
+			cfg.RateLimiting.TockenBucket.Capacity,
+			cfg.RateLimiting.TockenBucket.RefillRatePerSec,
+		)
+		_ = tb
+
+		fmt.Println(" LLM client configured:", cfg.LLM.Provider, "/", cfg.LLM.Model)
+		fmt.Println(" Tools:", reg.List())
+		fmt.Println(" Rate limit: burst=", cfg.RateLimiting.TockenBucket.Capacity)
+	} else {
+		fmt.Println(" No LLM endpoint configured - demo mode")
+	}
 
 }
 
-func buildTools() {
-
+func buildTools(toolConfigs []config.ToolConfig) *registry.Registry {
+	reg := registry.New()
+	ctx := context.Background()
+	_ = ctx
+	for _, tc := range toolConfigs {
+		t := configToTool(tc)
+		reg.Register(t)
+	}
+	return reg
 }
 
-func configToTool() {
-
+func configToTool(tc config.ToolConfig) tool.Tool {
+	return &cfgTool{
+		cfg: tc,
+	}
 }
 
 type cfgTool struct {
