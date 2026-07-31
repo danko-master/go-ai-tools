@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"go-ai-tools/config"
+	"go-ai-tools/judge"
 	"go-ai-tools/llm"
 	"go-ai-tools/mcp"
 	"go-ai-tools/ratelimit"
@@ -18,11 +19,17 @@ import (
 func main() {
 	configPath := flag.String("config", "", "Path to JSON config file")
 	mcpPort := flag.Int("mcp-port", 8080, "MCP server port")
+	demoMode := flag.Bool("demo", false, "Run as demo mode")
+
 	flag.Parse()
 
 	if *configPath != "" {
 		runWithConfig(*configPath)
 		return
+	}
+
+	if *demoMode {
+		demoJudge()
 	}
 
 	// Simple demo
@@ -179,4 +186,32 @@ func (t *cfgTool) Call(ctx context.Context, args json.RawMessage) (*tool.Result,
 
 func runProduction(cfg *config.Config) {
 	// Your production mode
+}
+
+func demoJudge() {
+	fmt.Println("Judge testing")
+	s := judge.Evaluate(judge.EvalRequest{
+		Task: "weather", ExpectedTool: "get_weather", ActualTool: "get_weather",
+	})
+	fmt.Printf(" Judge: %d/5\n", s.Overall)
+
+	// LLM as a judge
+	llmReq := judge.EvalRequest{
+		Task:           "Get the weather in Moscow",
+		ExpectedTool:   "get_weather",
+		ExpectedArg:    "Moscow",
+		ActualTool:     "get_weather",
+		ActualArg:      "Moscow",
+		ExpectedResult: map[string]any{"temp": 20, "condition": "cloudy"},
+		ActualResult:   map[string]any{"temp": 20, "condition": "cloudy"},
+		ToolCalls:      1,
+	}
+	llScore := judge.EvaluateWithLLM(
+		`You are an expert judge evaluating LLM agent tool usage.
+		Score based on correctness (1-5), completness (1-5), efficiency (1-5). 
+		Return JSON: {"correctness": N, "completeness": N, "efficiency": N, "explanation": "..."}`,
+		llmReq)
+
+	fmt.Println(" LLM Judge:")
+	judge.PrintScore(llScore)
 }
