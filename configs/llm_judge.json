@@ -1,0 +1,9 @@
+{
+  "api": {
+    "url": "https://api.openai.com/v1/chat/completions",
+    "model": "gpt-5o-mini",
+    "token": "",
+    "timeout_sec": "30",
+    "max_retries": "2"
+  }
+}
